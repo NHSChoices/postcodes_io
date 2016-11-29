@@ -1,6 +1,5 @@
-require "postcodes_io/version"
+require "postcodes_io/engine"
 require "postcodes_io/lookup"
-require "postcodes_io/postcode"
 
 module Postcodes
   class IO

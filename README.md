@@ -2,6 +2,10 @@
 
 A simple wrapper around [postcodes.io](http://postcodes.io/)
 
+The purpose of this fork is that the postcodes will be stored locally to have a faster lookup.
+
+When added to Rails project this gem adds a migration that creates the table `postcodes`.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -14,9 +18,6 @@ And then execute:
 
     $ bundle
 
-Or install it yourself as:
-
-    $ gem install postcodes_io
 
 ## Usage
 
@@ -34,7 +35,20 @@ pio = Postcodes::IO.new
 
 Lookup a postcode
 ```ruby
-postcode = pio.lookup('NN12 8TN')
+postcode = pio.lookup('NN12 8TN') # => record gets saved to the table
+postcode = pio.lookup('NN12 8TN') # => record is retrieved from table and doesn't hit the API
+```
+
+It rejects all postcodes which country is not England
+```ruby
+[1] pry(main)> pc = Postcodes::Postcode.new(postcode: 'aa  aa', data: {'country' => 'Wales'})
+=> #<Postcodes::Postcode:0x007fc59115aaa0 postcode: "AAAA", data: {"country"=>"Wales"}>
+[2] pry(main)> pc.valid?
+=> false
+[3] pry(main)> pc.errors
+=> #<ActiveModel::Errors:0x007fc590507b18
+ @base=#<Postcodes::Postcode:0x007fc59115aaa0 postcode: "AAAA", data: {"country"=>"Wales"}>,
+ @messages={:country=>["is not registered as part of England. Please contact partnerships@phe.gov.uk if you require an account and work in England."]}>
 ```
 
 Inspect the results!

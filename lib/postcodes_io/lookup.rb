@@ -1,10 +1,8 @@
 require 'excon'
 require 'json'
-require 'postcodes_io/postcode'
 
 module Postcodes
   module Lookup
-
 
     def lookup(*postcodes)
       postcodes.flatten!
@@ -14,19 +12,19 @@ module Postcodes
         lookup_postcode postcodes.first
       end
     end
-          
 
     private
 
     def lookup_postcode(postcode)
       postcode = remove_whitespace postcode
-      response = Excon.get("https://api.postcodes.io/postcodes/#{postcode}")
 
-      unless response.status == 404
-        parsed_response = JSON.parse(response.body)
-        return Postcodes::Postcode.new(parsed_response['result'])
+      Postcode.where(postcode: postcode).first_or_create do |api_pc|
+        response = Excon.get("https://api.postcodes.io/postcodes/#{postcode}")
+        unless response.status == 404
+          parsed_response = JSON.parse(response.body)
+          api_pc.data = parsed_response['result']
+        end
       end
-      return nil
     end
 
     def lookup_multiple(postcodes)
@@ -39,13 +37,17 @@ module Postcodes
 
       process_response(response) do |r|
         return r['result'].map do |result|
-          Postcodes::Postcode.new(result['result'])
+          postcode_from_result(result['result'])
         end
       end
     end
 
+    def postcode_from_result(api_result)
+      Postcodes::Postcode.create(postcode: api_result['postcode'], data: api_result)
+    end
+
     def remove_whitespace(string)
-      string.gsub(/\s+/, '') # remove any whitespace. m1 1ab => m11ab
+      string.gsub(/\s+/, '').upcase # remove any whitespace. m1 1ab => m11ab
     end
 
     def process_response(response, &block)
